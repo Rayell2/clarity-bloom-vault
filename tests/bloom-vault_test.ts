@@ -32,7 +32,7 @@ Clarinet.test({
 });
 
 Clarinet.test({
-  name: "Can add memory to vault",
+  name: "Can add and edit memory in vault",
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const wallet_1 = accounts.get("wallet_1")!;
     
@@ -47,17 +47,28 @@ Clarinet.test({
           types.none()
         ],
         wallet_1.address
+      ),
+      Tx.contractCall(
+        "bloom-vault",
+        "edit-memory",
+        [
+          types.uint(1),
+          types.uint(1),
+          types.utf8("Updated: First day at college"),
+          types.none()
+        ],
+        wallet_1.address
       )
     ]);
     
-    assertEquals(block.receipts.length, 1);
-    assertEquals(block.height, 2);
+    assertEquals(block.receipts.length, 2);
     block.receipts[0].result.expectOk().expectUint(1);
+    block.receipts[1].result.expectOk().expectBool(true);
   }
 });
 
 Clarinet.test({
-  name: "Can share vault with other user",
+  name: "Can manage vault permissions",
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const wallet_1 = accounts.get("wallet_1")!;
     const wallet_2 = accounts.get("wallet_2")!;
@@ -71,11 +82,20 @@ Clarinet.test({
           types.principal(wallet_2.address)
         ],
         wallet_1.address
+      ),
+      Tx.contractCall(
+        "bloom-vault",
+        "revoke-access",
+        [
+          types.uint(1),
+          types.principal(wallet_2.address)
+        ],
+        wallet_1.address
       )
     ]);
     
-    assertEquals(block.receipts.length, 1);
-    assertEquals(block.height, 2);
+    assertEquals(block.receipts.length, 2);
     block.receipts[0].result.expectOk().expectBool(true);
+    block.receipts[1].result.expectOk().expectBool(true);
   }
 });
